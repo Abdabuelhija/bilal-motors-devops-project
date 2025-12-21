@@ -1,1 +1,0 @@
-kubectl port-forward svc/backend-release-backend-chart 8000:8000

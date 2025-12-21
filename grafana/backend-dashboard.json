@@ -1,0 +1,35 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "title": "Backend API Request Rate",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(http_requests_total{app='backend'}[5m]))", "legendFormat": "RPS" }
+      ]
+    },
+    {
+      "title": "Backend Error Rate (5xx)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(http_requests_total{app='backend', status=~'5..'}[5m]))", "legendFormat": "Errors" }
+      ]
+    },
+    {
+      "title": "Backend Memory Usage",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(container_memory_usage_bytes{pod=~'backend-.*'})", "legendFormat": "Bytes" }
+      ]
+    }
+  ],
+  "title": "Bilal Motors - Backend Dashboard",
+  "uid": "bilal-motors-backend"
+}
