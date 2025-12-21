@@ -1,19 +1,18 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: bilal-motors-backend-sm
+  name: backend-servicemonitor
   namespace: monitoring
   labels:
-    release: monitoring  # חשוב: שיתאים ל-helm release name של kube-prometheus-stack
+    release: monitoring   # חייב להתאים ל-helm release של kube-prometheus-stack
 spec:
   selector:
     matchLabels:
-      app: bilal-motors-backend
+      app: backend-release-backend-chart   # חייב להתאים ל-label של ה-Service
   namespaceSelector:
     matchNames:
-      - default   # או ה-namespace שבו ה-backend שלך רץ
+      - default
   endpoints:
-    - port: http    # או השם של הפורט ב-Service (או targetPort), או:
-      # targetPort: 8000
-      path: /metrics
+    - port: http       # או שם הפורט אצלך ב-service, או להשתמש ב-targetPort: 8000
+      path: /metrics   # רק אם באמת יש /metrics ב-backend
       interval: 15s

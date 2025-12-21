@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: frontend-servicemonitor
+  namespace: monitoring
+  labels:
+    release: monitoring        # חייב להתאים ל-Helm release של kube-prometheus-stack (אצלך: monitoring)
+spec:
+  namespaceSelector:
+    matchNames:
+      - default                # namespace שבו ה-frontend שלך רץ
+
+  selector:
+    matchLabels:
+      app: frontend-release-frontend   # צריך להתאים ל-label של ה-Service של ה-frontend
+
+  endpoints:
+    - targetPort: 80           # ה-containerPort של ה-frontend (nginx/React)
+      path: /metrics           # יעבוד רק אם יש endpoint כזה
+      interval: 15s

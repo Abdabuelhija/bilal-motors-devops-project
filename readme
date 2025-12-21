@@ -4,3 +4,16 @@ backend : nodemon index.js
 should run this to make sure its works :
 kubectl -n default port-forward svc/backend-release-backend-chart 8000:8000
 kubectl -n default port-forward svc/frontend-release-frontend 3000:80
+
+## 📈 Monitoring Setup (Prometheus & Grafana)
+1. **Metrics Extraction**: The Node.js backend uses `prom-client` to expose metrics at `/metrics`.
+2. **Service Discovery**: Custom `ServiceMonitor` resources are used to allow Prometheus to auto-discover the Frontend and Backend pods.
+3. **Alerting**: Configured `PrometheusRule` to trigger alerts if the backend service is unreachable or latency exceeds 500ms.
+4. **Visualization**: Grafana is connected to Prometheus as a data source to visualize CPU, Memory, and Request rates.
+
+## 🔄 GitOps (ArgoCD)
+- **Deployment**: Managed by ArgoCD tracking the `charts/` directory.
+- **Sync Waves**:
+  - Backend: `sync-wave: "1"`
+  - Frontend: `sync-wave: "2"` (Depends on Backend)
+- **Auto-Sync**: Enabled for automatic deployment on every push to the `main` branch.
