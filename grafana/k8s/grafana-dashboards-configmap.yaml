@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bilal-grafana-dashboards
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  backend-dashboard.json: |
+$(python - <<'PY'
+import json, pathlib
+p=pathlib.Path('/mnt/data/bilal/bilal motors devops/grafana/backend-dashboard.json')
+print('\n'.join('    '+line.rstrip('\n') for line in p.read_text().splitlines()))
+PY)
+  frontend-dashboard.json: |
+$(python - <<'PY'
+import pathlib
+p=pathlib.Path('/mnt/data/bilal/bilal motors devops/grafana/frontend-dashboard.json')
+print('\n'.join('    '+line.rstrip('\n') for line in p.read_text().splitlines()))
+PY)

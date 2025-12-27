@@ -10,7 +10,7 @@
       "type": "timeseries",
       "datasource": "Prometheus",
       "targets": [
-        { "expr": "sum(rate(http_requests_total{app='backend'}[5m]))", "legendFormat": "RPS" }
+        { "expr": "sum(rate(http_requests_total{namespace=\"default\",service=~\"backend.*\"}[5m]))", "legendFormat": "RPS" }
       ]
     },
     {
@@ -18,7 +18,7 @@
       "type": "stat",
       "datasource": "Prometheus",
       "targets": [
-        { "expr": "sum(rate(http_requests_total{app='backend', status=~'5..'}[5m]))", "legendFormat": "Errors" }
+        { "expr": "sum(rate(http_requests_total{namespace=\"default\",service=~\"backend.*\",status=~\"5..\"}[5m]))", "legendFormat": "Errors" }
       ]
     },
     {
@@ -26,7 +26,7 @@
       "type": "gauge",
       "datasource": "Prometheus",
       "targets": [
-        { "expr": "sum(container_memory_usage_bytes{pod=~'backend-.*'})", "legendFormat": "Bytes" }
+        { "expr": "sum(container_memory_working_set_bytes{namespace=\"default\",pod=~\"backend.*\",container!=\"\"})", "legendFormat": "Bytes" }
       ]
     }
   ],

@@ -1,179 +1,177 @@
-# Bilal Motors — DevOps Project
+# Bilal Motors — Full DevOps Project
 
-A full-stack vehicle management system built with a **Node.js/Express backend**
-and a **React/Vite frontend**. The application uses **MongoDB Atlas** for data storage
-and **Cloudinary** for image hosting. The entire system is containerized with **Docker**
-and deployed on **Kubernetes using Helm charts**, following DevOps and GitOps best practices.
+A full-stack **car lot / vehicle management** system with a **Node.js/Express backend** and a **React (Vite) frontend**.
+The project is production-oriented: **Dockerized**, deployable on **Kubernetes via Helm**, GitOps-ready with **Argo CD**, and observable with **Prometheus + Grafana**.
 
 ---
 
 ## Architecture
 
-Frontend (React / Vite)
-→ Backend API (Node.js / Express)
-→ MongoDB Atlas
-
-Image uploads are handled via Cloudinary.
-
-The application is deployed on Kubernetes and managed using Helm.
-GitOps workflows are supported using Argo CD.
-Monitoring resources are prepared using Prometheus.
+- **Frontend** (React + Vite) → serves UI via NGINX
+- **Backend API** (Node.js + Express) → REST API + `/metrics` for Prometheus
+- **Database** (MongoDB) → local MongoDB for development or MongoDB Atlas in production
 
 ---
 
 ## Tech Stack
 
-**Frontend**
-- React
-- Vite
-
-**Backend**
-- Node.js
-- Express
-
-**Database**
-- MongoDB Atlas
-
-**Media Storage**
-- Cloudinary
-
-**DevOps / Infrastructure**
-- Docker
-- Kubernetes
-- Helm
-- Argo CD
-- Prometheus
+- **Frontend:** React, Vite, NGINX
+- **Backend:** Node.js, Express
+- **DB:** MongoDB (local or Atlas)
+- **DevOps:** Docker, Kubernetes, Helm, Argo CD
+- **Observability:** Prometheus, Grafana
+- **CI:** GitHub Actions
 
 ---
 
 ## Repository Structure
 
-- `frontend/` – React + Vite frontend application  
-- `backend/` – Node.js + Express backend API  
-- `charts/` – Helm charts for Kubernetes deployment  
-- `argocd/` – Argo CD GitOps application manifests  
-- `prometheus/` – Monitoring configuration and manifests  
-- `Completed.txt` – Progress tracking notes  
-- `Project structure.txt` – Project planning notes  
+- `frontend/` – React + Vite frontend
+- `backend/` – Node.js + Express backend
+- `charts/` – Helm charts (`backend-chart`, `frontend-chart`)
+- `argocd/` – Argo CD Application manifests
+- `prometheus/` – ServiceMonitors (Prometheus Operator)
+- `grafana/` – Dashboards + Kubernetes ConfigMaps for provisioning
 
 ---
 
-## Local Development
+## Quick Start (Local with Docker Compose)
+
+> This is the fastest way to run the project end-to-end.
+
+### Prerequisites
+- Docker + Docker Compose
+
+### Run
+```bash
+# from repo root
+ docker compose up --build
+```
+
+### URLs
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- Backend metrics: http://localhost:8000/metrics
+
+---
+
+## Local Development (without Docker)
 
 ### Prerequisites
 - Node.js (LTS recommended)
 - npm
-- MongoDB Atlas account
-- Cloudinary account
+- MongoDB (local) **or** MongoDB Atlas
 
-### Run Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Backend
+1. Copy env template:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+2. Edit `backend/.env` and set **either** `MONGODB_URI` (recommended) **or** Atlas parts.
+3. Run:
+   ```bash
+   cd backend
+   npm install
+   node index.js
+   ```
 
-### Run Backend
-```bash
-cd backend
-npm install
-nodemon index.js
-```
-
-Make sure environment variables are configured before running.
+### Frontend
+1. Copy env template:
+   ```bash
+   cp frontend/.env.example frontend/.env
+   ```
+2. Run:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
 ---
 
 ## Kubernetes Deployment (Helm)
 
 ### Prerequisites
-- Kubernetes cluster (Minikube / k3s / Docker Desktop)
-- kubectl
-- helm
+- A Kubernetes cluster (Minikube / k3s / Docker Desktop)
+- `kubectl`
+- `helm`
 
-### Example Deployment
+### Deploy Backend + Frontend
 ```bash
-helm upgrade --install backend-release ./charts/backend-chart
-helm upgrade --install frontend-release ./charts/frontend
+helm upgrade --install backend ./charts/backend-chart
+helm upgrade --install frontend ./charts/frontend-chart
 ```
 
-### Port Forwarding
+### Access (port-forward)
 ```bash
-kubectl -n default port-forward svc/backend-release-backend-chart 8000:8000
-kubectl -n default port-forward svc/frontend-release-frontend 3000:80
+kubectl port-forward svc/backend-backend-chart 8000:8000
+kubectl port-forward svc/frontend-frontend 3000:80
 ```
 
-### Access URLs
-- Backend: http://localhost:8000
+Then open:
 - Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+
+---
+
+## Monitoring (Prometheus + Grafana)
+
+### 1) Install kube-prometheus-stack
+Example (Helm release name **monitoring** in namespace **monitoring**):
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+kubectl create namespace monitoring || true
+helm upgrade --install monitoring prometheus-community/kube-prometheus-stack -n monitoring
+```
+
+### 2) Scrape backend metrics
+Apply the ServiceMonitor:
+```bash
+kubectl apply -f prometheus/backend-servicemonitor.yaml
+```
+
+> ⚠️ The ServiceMonitor selector expects the backend Service label `app: backend-backend-chart`.
+> If you install the backend with a different Helm release name, adjust the selector in `prometheus/backend-servicemonitor.yaml`.
+
+### 3) Provision Grafana datasource + dashboards (auto-import)
+```bash
+kubectl apply -f grafana/k8s/grafana-datasource.yaml
+kubectl apply -f grafana/k8s/grafana-dashboards.yaml
+```
+
+### 4) Open Grafana
+```bash
+kubectl -n monitoring port-forward svc/monitoring-grafana 3001:80
+```
+- Grafana: http://localhost:3001
+
+Get admin password (kube-prometheus-stack default secret):
+```bash
+kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-password}' | base64 -d && echo
+```
 
 ---
 
 ## GitOps (Argo CD)
 
-Argo CD manifests are located in the `argocd/` directory.
-
-Typical workflow:
-1. Install Argo CD in the cluster
-2. Apply Application manifests from `argocd/`
-3. Argo CD automatically syncs Helm charts from this repository
-
----
-
-## Monitoring (Prometheus)
-
-Monitoring configuration is stored under the `prometheus/` directory.
-Prometheus can be used to scrape backend metrics and visualize them
-using Grafana dashboards.
+Argo CD manifests are in `argocd/`.
+Typical flow:
+1. Install Argo CD in your cluster
+2. Apply the `argocd/*.yaml` Applications
+3. Argo CD syncs Helm charts from this repo
 
 ---
 
-## Configuration
+## CI (GitHub Actions)
 
-### Backend Environment Variables
-- `MONGODB_URI`
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
-- `PORT`
+Workflow location:
+- `.github/workflows/ci.yml`
 
-### Frontend Environment Variables
-- `VITE_API_URL`
-
-**Important:**  
-Never commit real secrets to Git.
-Use `.env` files locally and Kubernetes Secrets in production.
+What it does:
+- Installs dependencies for frontend/backend
+- Runs `npm test --if-present` / `npm run build --if-present`
+- Builds Docker images
+- Lints & templates Helm charts
 
 ---
-
-## Troubleshooting
-
-**Frontend loads but API fails**
-- Check `VITE_API_URL`
-- Verify backend service is reachable
-
-**Pods not ready**
-- `kubectl describe pod <pod-name>`
-- `kubectl logs <pod-name>`
-
-**MongoDB connection errors**
-- Check Atlas IP allowlist
-- Verify connection string
-
----
-
-## Roadmap
-
-Planned DevOps Improvements:
-- Kubernetes Deployments and ReplicaSets
-- Horizontal Pod Autoscaler (HPA)
-- ConfigMaps and Secrets
-- Kubernetes CronJobs
-- Liveness and Readiness Probes
-
----
-
-## License
-
-License not yet defined.
-Add a LICENSE file (MIT / Apache-2.0 recommended).
